@@ -31,8 +31,9 @@ author: Scott Harney
 
 import logging
 import sys
+import re
 import xmltodict # pip install xmltodict src: https://github.com/martinblech/xmltodict
-sys.path.append("./library/NetApp") 
+sys.path.append("/home/sharney/source/ansible-netapp/library/NetApp") 
 from NaServer import * # NetApp Managability SDK symlink or copy ./NetApp/lib/python/* in ./library
 
 EXAMPLES = '''
@@ -45,7 +46,7 @@ def netapp_info(module) :
 
     #This module is not built to make changes, so we are returning false here.
     results['changed'] = False
-    results['rc'] = 5
+    results['rc'] = 0
     results['ansible_facts'] = {}
 
     s = NaServer(module.params['host'], 1 , 21)
@@ -64,8 +65,8 @@ def netapp_info(module) :
         module.fail_json(msg=errmsg)
     
     cluster_version = {}
-    cluster_version['build-timestamp'] = xo.child_get_string('build-timestamp')
-    cluster_version['is-clustered'] = xo.child_get_string('is-clustered')
+    cluster_version['build_timestamp'] = xo.child_get_string('build-timestamp')
+    cluster_version['is_clustered'] = xo.child_get_string('is-clustered')
     cluster_version['version'] = xo.child_get_string('version')
     cluster_version['version_tuple'] = xmltodict.parse(xo.child_get('version-tuple').sprintf())
     cluster_version_info['cluster_version_info'] = cluster_version
@@ -84,7 +85,10 @@ def netapp_info(module) :
     system_nodes = xo.child_get('attributes-list')
     for node in system_nodes.children_get() :
         system_name = node.child_get_string('system-name')
-        system_info[system_name] = xmltodict.parse(system_nodes.child_get('system-info').sprintf())
+        # use regex to convert - in var names to _ so they can be used by ansible as vars
+        system_info_str = system_nodes.child_get('system-info').sprintf()
+        system_info_str = re.sub('-','_', system_info_str.rstrip())
+        system_info[system_name] = xmltodict.parse(system_info_str)
     system_node_info['sytem_node_info'] = system_info    
     results['ansible_facts'].update(system_node_info)
 

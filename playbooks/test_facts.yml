@@ -1,0 +1,13 @@
+---
+
+- name: get NetApp-specific facts
+  hosts: testing_host
+  connection: local
+
+  tasks:
+    - name: Get facts from netapp-setup module
+      netapp-setup: 
+        host={{ inventory_hostname }}
+        nauser=admin
+        napass=netapp123
+        logfile=/tmp/ansible-netapp.log
