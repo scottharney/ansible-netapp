@@ -72,6 +72,25 @@ def netapp_info(module) :
     #o = xmltodict.parse(xo.sprintf())
     results['ansible_facts'].update(cluster_version_info)
 
+    # cluster identity info
+    cluster_identity_info = {}
+    api = NaElement("cluster-identity-get")
+    xo = s.invoke_elem(api)
+    if (xo.results_status() == "failed") :
+        errmsg = "errno: ", xo.results_errno(), "reason: ", xo.results_reason()
+        module.fail_json(msg=errmsg)
+    
+    cluster_identity = {}
+    attr = xo.child_get('attributes') 
+    id_info = attr.child_get('cluster-identity-info')
+    for cid in id_info.children_get() :
+        cluster_name = id_info.child_get_string('cluster-name')
+        cluster_identity[cluster_name] = xmltodict.parse(id_info.sprintf())
+        
+    cluster_identity_info['cluster_identity'] = cluster_identity
+    results['ansible_facts'].update(cluster_identity_info)
+
+
     # get node specific info
     system_node_info = {}
     system_info = {}
@@ -87,8 +106,44 @@ def netapp_info(module) :
         system_info[system_name] = xmltodict.parse(node.sprintf())
         
     system_node_info['system_node_info'] = system_info
-    
     results['ansible_facts'].update(system_node_info)
+
+    # get svm info
+    svm_info = {}
+    vserver_info = {}
+    api = NaElement("vserver-get-iter")
+    xo = s.invoke_elem(api)
+    if (xo.results_status() == "failed") :
+        errmsg = "errno: ", xo.results_errno(), "reason: ", xo.results_reason()
+        module.fail_json(msg=errmsg)
+        
+    vservers = xo.child_get('attributes-list')
+    for vserver in vservers.children_get() :
+        svm_name = vserver.child_get_string('vserver-name')
+        vserver_info[svm_name] = xmltodict.parse(vserver.sprintf())
+        
+    svm_info['svm_info'] = vserver_info
+    results['ansible_facts'].update(svm_info)
+    
+    # get aggr info
+    aggr_info = {}
+    aggregate_info = {}
+    api = NaElement("aggr-get-iter")
+    xo = s.invoke_elem(api)
+    if (xo.results_status() == "failed") :
+        errmsg = "errno: ", xo.results_errno(), "reason: ", xo.results_reason()
+        module.fail_json(msg=errmsg)
+        
+    aggr_list = xo.child_get('attributes-list')
+    for aggrs in aggr_list.children_get() :
+        aggr_attrs = aggr_list.child_get('aggr-attributes')
+        for aggr in aggr_attrs.children_get() :
+            aggregate_name = aggrs.child_get_string('aggregate-name')
+            aggregate_info[aggregate_name] = xmltodict.parse(aggrs.sprintf())
+            
+    aggr_info['aggr_info'] = aggregate_info
+            
+    results['ansible_facts'].update(aggr_info)
 
 
     return results
