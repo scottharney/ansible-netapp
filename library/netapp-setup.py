@@ -31,7 +31,6 @@ author: Scott Harney
 
 import logging
 import sys
-import re
 import xmltodict # pip install xmltodict src: https://github.com/martinblech/xmltodict
 sys.path.append("/home/sharney/source/ansible-netapp/library/NetApp") 
 from NaServer import * # NetApp Managability SDK symlink or copy ./NetApp/lib/python/* in ./library
@@ -85,11 +84,10 @@ def netapp_info(module) :
     system_nodes = xo.child_get('attributes-list')
     for node in system_nodes.children_get() :
         system_name = node.child_get_string('system-name')
-        # use regex to convert - in var names to _ so they can be used by ansible as vars
-        system_info_str = system_nodes.child_get('system-info').sprintf()
-        system_info_str = re.sub('-','_', system_info_str.rstrip())
-        system_info[system_name] = xmltodict.parse(system_info_str)
-    system_node_info['sytem_node_info'] = system_info    
+        system_info[system_name] = xmltodict.parse(node.sprintf())
+        
+    system_node_info['system_node_info'] = system_info
+    
     results['ansible_facts'].update(system_node_info)
 
 

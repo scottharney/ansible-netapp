@@ -11,3 +11,6 @@
         nauser=admin
         napass=netapp123
         logfile=/tmp/ansible-netapp.log
+    - name: check a fact
+      debug: msg="system-name = {{ system_node_info[item.key]['system-info']['system-name'] }}" 
+      with_dict: "{{ system_node_info }}"
