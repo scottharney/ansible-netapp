@@ -36,7 +36,9 @@ sys.path.append("/home/sharney/source/ansible-netapp/library/NetApp")
 from NaServer import * # NetApp Managability SDK symlink or copy ./NetApp/lib/python/* in ./library
 
 EXAMPLES = '''
-TBD
+ansible -M ./library -t /tmp/facts -c local -m netapp-setup -i vars/hosts 192.169.2.13 -a "host={{ inventory_hostname }}  nauser=admin napass=mypass"
+
+ansible-playbook -M library -i vars/otherhosts playbooks/test_facts.yml
 '''
 
 def netapp_info(module) :
@@ -159,8 +161,8 @@ def main():
         nauser=dict(required=True),
         napass=dict(required=True),
         na_server_type=dict(required=False, default="FILER"),
-        na_transport_type=dict(required=False, default="HTTPS"),
-        na_port=dict(required=False, default=443),
+        na_transport_type=dict(required=False, default="HTTP"),
+        na_port=dict(required=False, default=80),
         na_style=dict(required=False, default="LOGIN"),
         logfile=dict(required=False, default=None),
         timeout=dict(required=False, default=0)
